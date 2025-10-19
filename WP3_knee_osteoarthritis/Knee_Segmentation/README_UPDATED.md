@@ -1,6 +1,5 @@
 # Knee Segmentation & Image Processing Pipeline
 
-![Example edges based on predicted knee joint segments](esim.png)
 
 ## Overview
 
