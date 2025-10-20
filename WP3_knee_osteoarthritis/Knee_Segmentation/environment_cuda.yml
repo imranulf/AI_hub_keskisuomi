@@ -1,0 +1,24 @@
+# Updated environment for CUDA 13 compatibility
+name: torch_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - opencv
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - matplotlib
+  - pillow
+  - pydicom
+  - pyparsing
+  - tk
+  - toolz
+  - pip:
+    # PyTorch nightly cu130 builds (compatible with system CUDA 13.0)
+    - torch --pre --extra-index-url https://download.pytorch.org/whl/nightly/cu130
+    - torchvision --pre --extra-index-url https://download.pytorch.org/whl/nightly/cu130
