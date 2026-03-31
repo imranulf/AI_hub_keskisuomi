@@ -1,7 +1,0 @@
-*.csv
-*.pth
-__pycache__
-.vscode
-out
-test_data*
-training_data*

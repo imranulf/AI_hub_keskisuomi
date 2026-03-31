@@ -73,18 +73,18 @@ def process_directory(input_dir, output_dir, kernel_size=5, iterations=2):
             # Expand mask
             expand_mask(str(mask_file), output_path, kernel_size, iterations)
             
-            print(f"{idx}/{len(mask_files)}: {mask_file.name} ✓")
+            print(f"{idx}/{len(mask_files)}: {mask_file.name} [OK]")
             success_count += 1
-            
+
         except Exception as e:
-            print(f"{idx}/{len(mask_files)}: {mask_file.name} ✗ Error: {str(e)}")
+            print(f"{idx}/{len(mask_files)}: {mask_file.name} [FAIL] Error: {str(e)}")
             failed_count += 1
-    
+
     print()
     print("=" * 50)
-    print(f"✓ Success: {success_count}/{len(mask_files)}")
-    print(f"✗ Failed: {failed_count}/{len(mask_files)}")
-    print(f"✓ Expanded masks saved to: {output_dir}/")
+    print(f"[OK] Success: {success_count}/{len(mask_files)}")
+    print(f"[FAIL] Failed: {failed_count}/{len(mask_files)}")
+    print(f"[OK] Expanded masks saved to: {output_dir}/")
     print("=" * 50)
 
 

@@ -199,9 +199,9 @@ if __name__ == '__main__':
         # Save results
         df = pd.DataFrame(results)
         df.to_csv("oa_variables.csv", index=False)
-        print(f"\n✓ Processed {len(image_files)} images")
-        print(f"✓ Results saved to oa_variables.csv")
-        print(f"✓ {len(df)} rows in output")
+        print(f"\n[OK] Processed {len(image_files)} images")
+        print(f"[OK] Results saved to oa_variables.csv")
+        print(f"[OK] {len(df)} rows in output")
         
     elif os.path.isfile(args.input_dir):
         file = args.input_dir
@@ -216,7 +216,7 @@ if __name__ == '__main__':
                 save = args.save)
             df = pd.DataFrame([result_dict])
             df.to_csv("oa_variables.csv", index=False)
-            print(f"\n✓ Results saved to oa_variables.csv")
+            print(f"\n[OK] Results saved to oa_variables.csv")
             print(df)
         except Exception as e:
             print(f"Error: {e}")

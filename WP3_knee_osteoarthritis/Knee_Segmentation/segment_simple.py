@@ -95,26 +95,26 @@ if __name__ == '__main__':
             # Load image
             img = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
             if img is None:
-                print("✗ Could not read")
+                print("[FAIL] Could not read")
                 continue
-            
+
             # Predict
-            mask = predict_img(model, Image.fromarray(img), device, 
+            mask = predict_img(model, Image.fromarray(img), device,
                              args.scale, args.threshold)
-            
+
             # Save mask
             out_name = os.path.splitext(filename)[0] + '_mask.png'
             out_path = os.path.join(args.output_dir, out_name)
             cv.imwrite(out_path, (mask * 255).astype(np.uint8))
-            
+
             # Count segmented pixels
             seg_pixels = np.sum(mask > 0)
             seg_percent = 100 * seg_pixels / (mask.shape[0] * mask.shape[1])
-            print(f"✓ {seg_percent:.1f}% segmented")
+            print(f"[OK] {seg_percent:.1f}% segmented")
             success += 1
-            
+
         except Exception as e:
-            print(f"✗ Error: {e}")
-    
-    print(f"\n✓ Completed: {success}/{len(files)} images")
-    print(f"✓ Masks saved to: {args.output_dir}/")
+            print(f"[FAIL] Error: {e}")
+
+    print(f"\n[OK] Completed: {success}/{len(files)} images")
+    print(f"[OK] Masks saved to: {args.output_dir}/")

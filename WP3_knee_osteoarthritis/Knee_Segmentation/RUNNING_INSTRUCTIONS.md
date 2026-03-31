@@ -1,5 +1,15 @@
 # Knee Segmentation - Running Instructions
 
+## Quick Reference
+
+**For pre-cropped knee images (224×224):**
+1. Use `segment_simple.py` to generate masks
+2. Optionally use `expand_masks.py` to enlarge masks
+3. Use `apply_mask_blackout.py` for full blackout
+4. Use `apply_mask_split.py` for left/right versions
+
+**Current workspace:** `C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation`
+
 ## Environment Setup
 
 ### 1. Activate Environment
@@ -31,29 +41,49 @@ conda activate knee-segmentation
 
 ## Running Predictions
 
-### For PNG/JPG Images (Your Current Setup)
+### For Pre-Cropped PNG Images (Recommended)
 
-Use `predict_png.py` for PNG or JPG knee x-ray images:
+Use `segment_simple.py` for PNG or JPG pre-cropped knee images:
 
 ```powershell
 cd C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation
 
-python predict_png.py -a unet -m MODEL_unet.pth -i "C:\path\to\images" -sv -nc 1 -ps 0.143 0.143
+python segment_simple.py -m MODEL_unet.pth -i "C:\path\to\images" -o output_folder
 ```
 
 #### Parameters:
-- `-a unet` : Architecture (unet or drn)
-- `-m MODEL_unet.pth` : Path to trained model
-- `-i "C:\path\to\images"` : Input directory with PNG/JPG files OR single image file
-- `-sv` or `--save` : Save segmentation masks to `out/` folder
-- `-nc 1` : Number of classes (1 for binary segmentation)
-- `-s 1.0` : Downscaling factor (1.0 = no downscaling)
-- `-t 0.5` : Mask threshold (0.0-1.0)
-- `-ps 0.143 0.143` : Pixel spacing in mm/pixel [row col]. **IMPORTANT**: Adjust this based on your actual image resolution!
+- `-a unet` : Architecture (unet or drn, default: unet)
+- `-m MODEL_unet.pth` : Path to trained model (required)
+- `-i "C:\path\to\images"` : Input directory with PNG/JPG files OR single image file (required)
+- `-o output_folder` : Output directory for masks (default: "out")
+- `-nc 1` : Number of classes (1 for binary segmentation, default: 1)
+- `-nch 1` : Number of input channels (1 for grayscale, default: 1)
+- `-s 1.0` : Downscaling factor (1.0 = no downscaling, default: 1.0)
+- `-t 0.5` : Mask threshold (0.0-1.0, default: 0.5)
 
 #### Example for Your Test Data:
 ```powershell
-python predict_png.py -a unet -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -sv -nc 1 -ps 0.143 0.143
+python segment_simple.py -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -o results_test_0
+```
+
+### For Mask Expansion (Optional)
+
+```powershell
+# Medium expansion (default)
+python expand_masks.py -i results_test_0 -o results_test_0_expanded
+
+# Large expansion
+python expand_masks.py -i results_test_0 -o results_test_0_expanded_L -k 7 -n 3
+```
+
+### For Applying Masks
+
+```powershell
+# Full blackout
+python apply_mask_blackout.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -m results_test_0 -o blackedout_test_0
+
+# Left/right split
+python apply_mask_split.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -m results_test_0 -l left_masked_test_0 -r right_masked_test_0
 ```
 
 ### For DICOM Files (Original Setup)
@@ -68,44 +98,55 @@ Note: DICOM files contain pixel spacing metadata, so no `-ps` parameter is neede
 
 ## Output Files
 
-### 1. Segmentation Masks (if `-sv` flag used)
-- Location: `Knee_Segmentation/out/`
-- Format: `{filename}_l.png` and `{filename}_r.png`
+### 1. Segmentation Masks
+- Location: `Knee_Segmentation/<output_folder>/`
+- Format: `{filename}_mask.png`
 - Content: Binary segmentation masks (white = joint space, black = background)
 
-### 2. OA Variables CSV
-- Location: `Knee_Segmentation/oa_variables.csv`
-- Content: Calculated osteoarthritis variables for each knee:
-  - `name`: Image filename
-  - `side`: "l" (left) or "r" (right)
-  - `l_em_height`, `m_em_height`: Lateral and medial eminentia heights (mm)
-  - `l_em_angle`, `m_em_angle`: Lateral and medial eminentia angles (degrees)
-  - `l_min_jsw`, `m_min_jsw`: Lateral and medial minimum joint space width (mm)
-  - `l_avg_jsw`, `m_avg_jsw`: Lateral and medial average joint space width (mm)
-  - `tibia_model`: Linear regression coefficients for tibial plane
+### 2. Expanded Masks (if expansion step used)
+- Location: `Knee_Segmentation/<output_folder>_expanded/`
+- Format: `{filename}_mask.png`
+- Content: Enlarged segmentation masks
+
+### 3. Blackout Images (if blackout applied)
+- Location: `Knee_Segmentation/<blackout_folder>/`
+- Format: `{filename}.png`
+- Content: Original images with masked regions set to black
+
+### 4. Split Images (if split applied)
+- Location: `Knee_Segmentation/<left_folder>/` and `<right_folder>/`
+- Format: `{filename}.png`
+- Content: Images with left or right half of mask applied
 
 ## Important Notes
 
-### Pixel Spacing
-The default pixel spacing is set to `0.143 mm/pixel` (approximately 0.177 DPI or 7 pixels/mm). This is critical for accurate physical measurements. **You must adjust this value** based on your actual image resolution:
+### Image Requirements
+- **Pre-cropped knee images**: Works with any size, optimized for 224×224
+- **Format**: PNG or JPG grayscale images
+- **Orientation**: Should show single knee region
+- **No DICOM metadata required**: Works with standard image files
 
-- If your images have different resolution, calculate: `pixel_spacing = physical_size_mm / image_size_pixels`
-- Common values:
-  - High-res medical: 0.1-0.15 mm/pixel
-  - Standard medical: 0.15-0.2 mm/pixel
-  - Lower res: 0.2-0.3 mm/pixel
+### Mask Expansion Levels
+Choose expansion level based on your needs:
+- **No expansion**: Original joint space only
+- **Small (-k 3 -n 1)**: Minimal expansion, ~2-3 pixel border
+- **Medium (-k 5 -n 2)**: Default, ~5-7 pixel border
+- **Large (-k 7 -n 3)**: Significant expansion, ~10-12 pixel border
+- **XL (-k 10 -n 5)**: Maximum expansion, ~20+ pixel border
 
 ### Error Handling
-- The script processes all images and skips ones that fail
+- The scripts process all images and skip ones that fail
 - Common errors:
-  - "float division by zero": Poor segmentation or unusual image content
   - "Could not read image": Invalid image format or corrupted file
+  - "Mask not found": Run segmentation step first
+  - "Shape mismatch": Masks will be resized to match images automatically
 - Failed images are logged but don't stop the batch process
 
 ### Performance
-- CPU mode: ~2-5 seconds per image
-- GPU mode (if CUDA available): ~0.5-1 second per image
-- Check CUDA availability: `python -c "import torch; print(torch.cuda.is_available())"`
+- **CPU mode**: ~0.1-0.3 seconds per image for segmentation
+- **GPU mode** (if CUDA available): Much faster
+- **639 images**: 1-3 minutes for segmentation on CPU
+- **Check CUDA**: `python -c "import torch; print(torch.cuda.is_available())"`
 
 ## Troubleshooting
 
@@ -134,40 +175,84 @@ Or always use the full Python path (Option C above).
 ### Poor Segmentation Results
 - Check that images are properly oriented knee x-rays
 - Adjust `-t` threshold (try 0.3-0.7)
-- Check pixel spacing value matches your images
+- Verify MODEL_unet.pth is the correct trained model
 - Consider retraining the model on your specific dataset
+
+### Masks Don't Align with Images
+- Masks are automatically resized to match image dimensions
+- Check that mask files have correct naming (`{original}_mask.png`)
+- Ensure mask directory path is correct
+
+### Want Larger/Smaller Masked Regions
+- Use `expand_masks.py` to enlarge masks
+- Adjust `-k` (kernel size) and `-n` (iterations) parameters
+- Test different levels: S, M, L, XL
 
 ## Next Steps
 
-1. **Validate Results**: Open some output masks in `out/` folder and verify segmentation quality
-2. **Check CSV**: Open `oa_variables.csv` to see calculated measurements
-3. **Adjust Pixel Spacing**: If you know the true physical dimensions, update the `-ps` parameter
-4. **Process Other Folders**: Run on `data/test/data/2`, `data/train/data/0`, etc.
-5. **Batch Processing**: Create a script to process all folders automatically
+1. **Validate Results**: Open some output masks to verify segmentation quality
+2. **Test Expansion**: Try different expansion levels to find optimal size
+3. **Process Other Folders**: Run on all your data folders (test, train, val)
+4. **Batch Processing**: Use the pre-made batch files for automation
+5. **Analysis**: Use the generated images for your osteoarthritis research
 
-## Example Batch Script
+## Batch Files (Ready to Use)
 
-Create `run_all.ps1`:
-```powershell
-$env_python = "C:\Users\imran\miniconda3\envs\knee-segmentation\python.exe"
-$folders = @(
-    "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0",
-    "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\2",
-    "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\0",
-    "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\2",
-    "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\0",
-    "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\2"
-)
+Pre-made batch files are included in the project. Just double-click to run!
 
-foreach ($folder in $folders) {
-    $name = Split-Path $folder -Leaf
-    Write-Host "Processing folder: $folder"
-    & $env_python predict_png.py -a unet -m MODEL_unet.pth -i $folder -sv -nc 1 -ps 0.143 0.143
-    Move-Item oa_variables.csv "oa_variables_$name.csv"
-}
+### Available Batch Files
+
+| File | Description |
+|------|-------------|
+| `process_all.bat` | Process all 6 folders through complete pipeline |
+| `expand_all_masks.bat` | Create S/M/L/XL expansion for all masks |
+| `process_single_folder.bat` | Process a custom folder |
+| `segment_only.bat` | Quick mask generation only |
+| `apply_expanded_blackout.bat` | Blackout with expanded masks |
+
+### Complete Pipeline - All Folders
+
+Double-click `process_all.bat` or run from command prompt:
+
+```batch
+process_all.bat
 ```
 
-Run it:
-```powershell
-.\run_all.ps1
+This processes all 6 data folders (test_0, test_2, train_0, train_2, val_0, val_2) through:
+1. Segmentation (generates masks)
+2. Blackout (removes joint space)
+3. Left/right split (bilateral analysis)
+
+### Expand All Masks
+
+After running `process_all.bat`, expand masks with:
+
+```batch
+expand_all_masks.bat
+```
+
+Creates 4 expansion sizes (S, M, L, XL) for all mask directories.
+
+### Process Single Folder
+
+For custom folders:
+
+```batch
+process_single_folder.bat "C:\path\to\images" "output_prefix"
+```
+
+### Segmentation Only
+
+Quick mask generation:
+
+```batch
+segment_only.bat "C:\path\to\images" "output_dir"
+```
+
+### Apply Expanded Blackout
+
+Create blackout images using expanded masks:
+
+```batch
+apply_expanded_blackout.bat
 ```

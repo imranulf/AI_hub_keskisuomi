@@ -104,19 +104,19 @@ def process_directory(input_dir, mask_dir, output_left_dir, output_right_dir):
             # Apply split masks
             apply_split_mask(str(img_file), mask_path, output_left_path, output_right_path)
             
-            print(f"{idx}/{len(image_files)}: {img_file.name} ✓")
+            print(f"{idx}/{len(image_files)}: {img_file.name} [OK]")
             success_count += 1
-            
+
         except Exception as e:
-            print(f"{idx}/{len(image_files)}: {img_file.name} ✗ Error: {str(e)}")
+            print(f"{idx}/{len(image_files)}: {img_file.name} [FAIL] Error: {str(e)}")
             failed_count += 1
-    
+
     print()
     print("=" * 50)
-    print(f"✓ Success: {success_count}/{len(image_files)}")
-    print(f"✗ Failed: {failed_count}/{len(image_files)}")
-    print(f"✓ Left-masked saved to: {output_left_dir}/")
-    print(f"✓ Right-masked saved to: {output_right_dir}/")
+    print(f"[OK] Success: {success_count}/{len(image_files)}")
+    print(f"[FAIL] Failed: {failed_count}/{len(image_files)}")
+    print(f"[OK] Left-masked saved to: {output_left_dir}/")
+    print(f"[OK] Right-masked saved to: {output_right_dir}/")
     print("=" * 50)
 
 

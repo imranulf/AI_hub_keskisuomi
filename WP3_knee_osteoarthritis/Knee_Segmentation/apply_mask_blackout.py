@@ -104,22 +104,22 @@ if __name__ == '__main__':
         
         # Check if mask exists
         if not os.path.exists(mask_path):
-            print(f"✗ Mask not found: {mask_filename}")
+            print(f"[FAIL] Mask not found: {mask_filename}")
             failed_count += 1
             continue
-        
+
         # Apply mask
         success, message = apply_mask_blackout(original_path, mask_path, output_path)
-        
+
         if success:
-            print("✓")
+            print("[OK]")
             success_count += 1
         else:
-            print(f"✗ {message}")
+            print(f"[FAIL] {message}")
             failed_count += 1
-    
+
     print(f"\n{'='*50}")
-    print(f"✓ Success: {success_count}/{len(original_files)}")
-    print(f"✗ Failed: {failed_count}/{len(original_files)}")
-    print(f"✓ Output saved to: {args.output_dir}/")
+    print(f"[OK] Success: {success_count}/{len(original_files)}")
+    print(f"[FAIL] Failed: {failed_count}/{len(original_files)}")
+    print(f"[OK] Output saved to: {args.output_dir}/")
     print(f"{'='*50}")

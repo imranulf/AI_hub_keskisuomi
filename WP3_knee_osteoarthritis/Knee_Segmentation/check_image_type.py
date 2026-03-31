@@ -25,6 +25,6 @@ print(f"Center region mean: {center_mean:.2f}")
 print(f"Ratio (center/edge): {center_mean/edge_mean if edge_mean > 0 else 'inf':.2f}")
 
 if center_mean / edge_mean > 1.5 if edge_mean > 0 else False:
-    print("\n✓ Looks like a PRE-CROPPED knee image (bright center, dark edges)")
+    print("\n[OK] Looks like a PRE-CROPPED knee image (bright center, dark edges)")
 else:
-    print("\n✗ Looks like a full X-ray needing cropping")
+    print("\n[FAIL] Looks like a full X-ray needing cropping")
