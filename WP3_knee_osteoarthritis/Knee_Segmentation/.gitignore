@@ -11,14 +11,3 @@ __pycache__
 *.pth
 classification_results/
 gradcam_results/
-
-*_masked_*
-blackout_*
-results_*
-comparison_figures*
-classification_datasets/
-knee_osteoarthritis_dataset/
-blackedout_*
-
-out*
-data/

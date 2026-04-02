@@ -1,5 +1,7 @@
 """
-classify_evaluate.py — Evaluate a trained ResNet-18 classifier on any test set
+classify_evaluate_swin.py — Evaluate a trained Swin-Tiny classifier on any test set
+
+Identical protocol to classify_evaluate.py (ResNet-18) but for Swin-Tiny.
 
 Produces:
     - Accuracy, Precision, Recall, F1-score
@@ -8,12 +10,12 @@ Produces:
     - Confidence distribution analysis (for RQ3)
 
 Usage:
-    python classify_evaluate.py --model classification_results/baseline/best_model.pth \
-        --test-dir knee_osteoarthritis_dataset/test --name baseline_on_original
+    python classify_evaluate_swin.py --model classification_results_swin/baseline/best_model.pth \
+        --test-dir knee_osteoarthritis_dataset/test --name baseline_self
 
     # Cross-evaluation (RQ3): baseline model on ablated test set
-    python classify_evaluate.py --model classification_results/baseline/best_model.pth \
-        --test-dir blackout_dataset/test --name baseline_on_blackout
+    python classify_evaluate_swin.py --model classification_results_swin/baseline/best_model.pth \
+        --test-dir classification_datasets/blackout/test --name baseline_on_blackout
 """
 
 import argparse
@@ -47,11 +49,21 @@ class GrayscaleImageFolder(ImageFolder):
 
 
 def build_model(num_classes: int = 2) -> nn.Module:
-    """Build ResNet-18 with single-channel input (no pretrained — weights loaded separately)."""
-    model = models.resnet18(weights=None)
-    new_conv = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-    model.conv1 = new_conv
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    """Build Swin-Tiny with single-channel input (no pretrained — weights loaded separately)."""
+    model = models.swin_t(weights=None)
+    # Adapt patch embedding: 3-channel -> 1-channel
+    original_proj = model.features[0][0]
+    new_proj = nn.Conv2d(
+        1, original_proj.out_channels,
+        kernel_size=original_proj.kernel_size,
+        stride=original_proj.stride,
+        padding=original_proj.padding,
+        bias=(original_proj.bias is not None),
+    )
+    model.features[0][0] = new_proj
+    # Replace head
+    in_features = model.head.in_features
+    model.head = nn.Linear(in_features, num_classes)
     return model
 
 
@@ -106,7 +118,6 @@ def compute_metrics(labels, preds, class_names):
 
     metrics = {"accuracy": accuracy, "total": n, "correct": int(correct)}
 
-    # Per-class metrics
     for i, name in enumerate(class_names):
         tp = ((preds == i) & (labels == i)).sum()
         fp = ((preds == i) & (labels != i)).sum()
@@ -125,7 +136,6 @@ def compute_metrics(labels, preds, class_names):
         metrics[f"{name}_fn"] = int(fn)
         metrics[f"{name}_tn"] = int(tn)
 
-    # Macro averages
     precisions = [metrics[f"{n}_precision"] for n in class_names]
     recalls = [metrics[f"{n}_recall"] for n in class_names]
     f1s = [metrics[f"{n}_f1"] for n in class_names]
@@ -133,7 +143,6 @@ def compute_metrics(labels, preds, class_names):
     metrics["macro_recall"] = np.mean(recalls)
     metrics["macro_f1"] = np.mean(f1s)
 
-    # Confusion matrix [actual x predicted]
     n_classes = len(class_names)
     cm = np.zeros((n_classes, n_classes), dtype=int)
     for true, pred in zip(labels, preds):
@@ -144,15 +153,8 @@ def compute_metrics(labels, preds, class_names):
 
 
 def confidence_analysis(labels, preds, probs, class_names):
-    """
-    Analyze prediction confidence (RQ3).
-
-    Returns dict with:
-        - mean confidence for correct/incorrect predictions
-        - mean confidence per class
-        - confidence when correct but low-confidence (uncertain correct)
-    """
-    predicted_confidence = np.max(probs, axis=1)  # max softmax prob per sample
+    """Analyze prediction confidence (RQ3)."""
+    predicted_confidence = np.max(probs, axis=1)
     correct_mask = labels == preds
 
     analysis = {
@@ -162,7 +164,6 @@ def confidence_analysis(labels, preds, probs, class_names):
         "std_confidence_all": float(np.std(predicted_confidence)),
     }
 
-    # Per-class confidence
     for i, name in enumerate(class_names):
         mask = labels == i
         if mask.any():
@@ -174,7 +175,6 @@ def confidence_analysis(labels, preds, probs, class_names):
                 np.mean(predicted_confidence[mask & ~correct_mask])
             ) if (mask & ~correct_mask).any() else None
 
-    # Uncertain correct: predicted correctly but confidence < 0.7
     uncertain_correct = correct_mask & (predicted_confidence < 0.7)
     analysis["uncertain_correct_count"] = int(uncertain_correct.sum())
     analysis["uncertain_correct_pct"] = float(uncertain_correct.sum() / len(labels) * 100)
@@ -183,7 +183,7 @@ def confidence_analysis(labels, preds, probs, class_names):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate classification model")
+    parser = argparse.ArgumentParser(description="Evaluate Swin-Tiny classification model")
     parser.add_argument("--model", type=str, required=True,
                         help="Path to best_model.pth checkpoint")
     parser.add_argument("--test-dir", type=str, required=True,
@@ -199,13 +199,14 @@ def main():
 
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
+    print(f"Architecture: Swin-Tiny")
 
     # Output directory
-    out_dir = Path("classification_results") / "evaluations"
+    out_dir = Path("classification_results_swin") / "evaluations"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Load model
-    checkpoint = torch.load(args.model, map_location=device)
+    checkpoint = torch.load(args.model, map_location=device, weights_only=False)
     model = build_model(num_classes=2)
     model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
@@ -230,7 +231,7 @@ def main():
 
     # Print results
     print(f"\n{'='*60}")
-    print(f"RESULTS: {args.name}")
+    print(f"RESULTS: {args.name} (Swin-Tiny)")
     print(f"{'='*60}")
     print(f"Accuracy:        {metrics['accuracy']:.4f} ({metrics['correct']}/{metrics['total']})")
     print(f"Macro Precision: {metrics['macro_precision']:.4f}")
@@ -252,6 +253,7 @@ def main():
     # Save results
     result = {
         "name": args.name,
+        "architecture": "swin_tiny",
         "model_path": args.model,
         "test_dir": args.test_dir,
         "metrics": {k: v for k, v in metrics.items() if k != "confusion_matrix"},
@@ -259,7 +261,6 @@ def main():
         "confidence": confidence,
     }
 
-    # Convert numpy types for JSON serialization
     def convert(obj):
         if isinstance(obj, (np.integer,)):
             return int(obj)
@@ -275,7 +276,6 @@ def main():
         json.dump(result, f, indent=2, default=convert)
     print(f"\nResults saved to: {result_path}")
 
-    # Optional: save per-image predictions
     if args.save_per_image:
         per_image_path = out_dir / f"{args.name}_per_image.csv"
         with open(per_image_path, "w", newline="") as f:

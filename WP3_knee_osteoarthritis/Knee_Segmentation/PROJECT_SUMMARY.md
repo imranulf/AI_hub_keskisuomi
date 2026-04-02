@@ -210,7 +210,15 @@ Knee_Segmentation/
 ├── results_test_0_expanded/   # Expanded masks
 ├── blackedout_test_0/         # Blackout images
 ├── left_masked_test_0/        # Left-masked
-└── right_masked_test_0/       # Right-masked
+├── right_masked_test_0/       # Right-masked
+│
+├── classification_datasets/   # Ablated datasets grouped by train/val/test
+├── classification_results/    # ResNet-18 (run_all_experiments) outputs
+├── classification_results_efficientnet/ # EfficientNet-B0 outputs
+├── classification_results_swin/ # Swin-Tiny outputs
+├── gradcam_results/           # Visual XAI heatmaps
+├── gradcam_results_efficientnet/  # EfficientNet-B0 outputs
+└── gradcam_results_swin/      # Swin-Tiny outputs
 ```
 
 ---
@@ -286,6 +294,13 @@ Knee_Segmentation/
 ---
 
 ## 📝 Version History
+
+- **v3.0** (2026-03-31)
+  - Complete classification suite for ResNet-18, EfficientNet-B0, and Swin-Tiny.
+  - Multi-seed statistical robustness testing (`run_robustness*.py`).
+  - Grad-CAM heatmap visualization across all model types.
+  - Horizontal expansion integrated as primary masking technique.
+  - GPU adaptation across the entire pipeline.
 
 - **v2.1** (2025-10-23)
   - Added `expand_masks.py` for mask expansion

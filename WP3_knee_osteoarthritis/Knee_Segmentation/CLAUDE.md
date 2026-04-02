@@ -106,7 +106,7 @@ python expand_mask_horizontal.py -i <mask_dir> -o <output_dir> -k <kernel_width>
 ### 3. Mask Application
 
 #### `apply_mask_blackout.py`
-Apply full blackout to masked regions.
+Apply full blackout to masked regions (joint space + adjacent subchondral bone when using expanded masks).
 
 ```bash
 python apply_mask_blackout.py -i <image_dir> -m <mask_dir> -o <output_dir>
@@ -307,7 +307,7 @@ Localize knee region in full X-ray images.
 | Condition | Dataset | What's Masked | Research Question |
 |-----------|---------|---------------|-------------------|
 | Baseline | knee_osteoarthritis_dataset | Nothing (original) | Control |
-| Blackout | classification_datasets/blackout | Joint space removed | Main RQ |
+| Blackout | classification_datasets/blackout | Joint region removed (joint space + adjacent subchondral bone via expanded mask) | Main RQ |
 | Medial Masked | classification_datasets/medial_masked | Medial compartment removed | Main RQ |
 | Lateral Masked | classification_datasets/lateral_masked | Lateral compartment removed | Main RQ |
 
@@ -315,6 +315,12 @@ Localize knee region in full X-ray images.
 - **Phase 2 (Self-eval):** Each model tested on its own test set → accuracy comparison
 - **Phase 3 (Cross-eval):** Baseline model tested on all 4 test sets → confidence shift analysis
 - **Phase 4 (Summary):** Comparison summary with accuracy drops and confidence metrics across conditions
+
+### Hardware
+- **GPU (authoritative results):** NVIDIA RTX 4080 Laptop GPU (12GB VRAM), ~22-28s per epoch, ~7 min per model
+- **CPU (initial runs, superseded):** Intel Core i9-13980HX (32 threads), ~50 min per model
+- **GPU speedup:** ~7× across all experiments
+- **GPU environment:** `.venv_gpu` virtual environment with CUDA-enabled PyTorch
 
 ### Classification Results Directory
 ```
@@ -332,7 +338,24 @@ classification_results/
 │   ├── baseline_on_blackout.json
 │   ├── baseline_on_medial_masked.json
 │   └── baseline_on_lateral_masked.json
-└── experiment_summary.json
+├── experiment_summary.json
+├── robustness/
+│   ├── robustness_summary.json
+│   └── robustness_summary.csv
+├── seed_42/{baseline,blackout,medial_masked,lateral_masked}/best_model.pth
+├── seed_179/{baseline,blackout,medial_masked,lateral_masked}/best_model.pth
+├── seed_316/{baseline,blackout,medial_masked,lateral_masked}/best_model.pth
+├── seed_453/{baseline,blackout,medial_masked,lateral_masked}/best_model.pth
+└── seed_590/{baseline,blackout,medial_masked,lateral_masked}/best_model.pth
+
+gradcam_results/
+├── baseline/           # 10 samples: heatmap, overlay, side-by-side
+├── blackout/
+├── medial_masked/
+├── lateral_masked/
+├── baseline_on_blackout/
+├── baseline_on_medial/
+└── baseline_on_lateral/
 ```
 
 ## Complete Pipeline Workflow
@@ -386,14 +409,14 @@ results_{dataset}_{grade}_extralarge_horiz/   # Horizontal-only expansion
 
 ### Masked Images (Regular Expansion)
 ```
-blackout_{dataset}_{grade}_extralarge/      # Full joint blackout
+blackout_{dataset}_{grade}_extralarge/      # Full joint region blackout (space + bone margins)
 left_masked_{dataset}_{grade}_extralarge/   # Left side masked
 right_masked_{dataset}_{grade}_extralarge/  # Right side masked
 ```
 
 ### Masked Images (Horizontal Expansion)
 ```
-blackout_{dataset}_{grade}_extralarge_horiz/      # Full joint blackout (horizontal)
+blackout_{dataset}_{grade}_extralarge_horiz/      # Full joint region blackout (horizontal, space + bone margins)
 left_masked_{dataset}_{grade}_extralarge_horiz/   # Left side masked (horizontal)
 right_masked_{dataset}_{grade}_extralarge_horiz/  # Right side masked (horizontal)
 ```
@@ -430,7 +453,7 @@ pipeline_visualization.png              # Single sample visualization
 
 **Subtotal: 21,712** (5,428 x 4 types)
 
-### Horizontal Expansion (Extra Large Horiz)
+### Horizontal Expansion (Extra Large Horiz) — PRIMARY (used for thesis)
 
 | Output Type | train_0 | train_2 | val_0 | val_2 | test_0 | test_2 | Total |
 |-------------|---------|---------|-------|-------|--------|--------|-------|
@@ -439,9 +462,11 @@ pipeline_visualization.png              # Single sample visualization
 | Left Masked (Horiz) | 2,286 | 1,516 | 328 | 212 | 639 | 447 | 5,428 |
 | Right Masked (Horiz) | 2,286 | 1,516 | 328 | 212 | 639 | 447 | 5,428 |
 
-**Subtotal: 21,712** (5,428 x 4 types)
+**Subtotal: 21,712 generated** (5,428 x 4 types)
 
-**Total output images: 43,424** (5,428 x 8 types)
+**Thesis classification experiments used: 16,248 images** (horizontal expanded — blackout + left-masked + right-masked, actual file count across all train/val/test splits)
+
+**Total output images: 43,424** (5,428 x 8 types, both variants)
 
 ## Dependencies
 

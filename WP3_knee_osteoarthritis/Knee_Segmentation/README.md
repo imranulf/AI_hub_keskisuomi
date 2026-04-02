@@ -7,11 +7,17 @@
 
 ## Overview
 
+## Architectures Supported
+- **ResNet-18** (Control Baseline)
+- **EfficientNet-B0** (Parameter-efficient CNN)
+- **Swin-Tiny** (Vision Transformer)
+
+
 This project provides a complete pipeline for knee X-ray image segmentation and processing using a trained U-Net model. The pipeline is designed for **pre-cropped knee images** (224×224 pixels) and includes four main processing steps:
 
 1. **Mask Generation** - Segment joint space regions from knee X-rays
 2. **Mask Expansion** - Enlarge masks to cover more bone area (optional)
-3. **Full Blackout** - Replace entire segmented regions with black pixels  
+3. **Full Blackout** - Replace entire segmented region (joint space + adjacent subchondral bone when using expanded masks) with black pixels
 4. **Split Blackout** - Create left-half and right-half masked versions
 
 ### Original Project Information
@@ -246,8 +252,8 @@ python apply_mask_blackout.py -i <input_dir> -m <mask_dir> -o <output_dir>
 #### Output
 - Original images with masked regions set to black (pixel value 0)
 - Same dimensions as original images
-- Useful for removing joint space information completely
-- Can use regular or expanded masks
+- Useful for removing joint region information (joint space alone with regular masks, or joint space + adjacent subchondral bone with expanded masks)
+- Can use regular or expanded masks (expanded masks cover a wider band including bone margins)
 
 #### Example
 ```bash
@@ -348,6 +354,10 @@ python generate_comparison_figures_horizontal.py --samples 3
 ## Classification & Experiments Pipeline
 
 A complete suite of tools is provided to train classifiers, benchmark robustness, and generate Explainable AI (XAI) visualizations (Grad-CAM).
+The pipeline supports three distinct Neural Network architectures for comparative analysis:
+1. **ResNet-18** (`run_all_experiments.py` and default scripts) - The baseline standard CNN.
+2. **EfficientNet-B0** (`_efficientnet` scripts) - Parameter-efficient CNN.
+3. **Swin-Tiny** (`_swin` scripts) - Vision Transformer with shifted windows.
 
 ### 1. Data Preparation (`prepare_classification_data.py`)
 
@@ -355,7 +365,7 @@ Before training, the flat ablated image folders must be organized into classific
 
 #### Usage
 ```powershell
-# Step 1: Sort left/right masks into anatomical Medial/Lateral directories
+# Step 1: Sort left/right masks into anatomical Medial/Lateral directories      
 python sort_lateral_medial.py
 
 # Step 2: Structure datasets for PyTorch ImageFolder
@@ -363,22 +373,23 @@ python prepare_classification_data.py --base-dir . --output-dir classification_d
 ```
 *This creates the `classification_datasets/` structure used by the ML models.*
 
-### 2. Classification Training & Evaluation (`run_all_experiments.py`)
+### 2. Classification Training & Evaluation
 
 A master script that trains and evaluates classifiers over the 4 experimental condition datasets (baseline, blackout, lateral, medial). It performs cross-evaluations to test confidence shifts.
+There are dedicated scripts for each architecture:
+- `run_all_experiments.py` (ResNet-18)
+- `run_all_experiments_efficientnet.py` (EfficientNet-B0)
+- `run_all_experiments_swin.py` (Swin-Tiny)
 
 #### Usage
 To run the full suite with GPU acceleration across 25 epochs:
 ```powershell
 python run_all_experiments.py --epochs 25 --batch-size 32
-```
-To run only particular phases:
-```powershell
-python run_all_experiments.py --phase 2  # Evaluate existing models
-python run_all_experiments.py --phase 3  # Cross-evaluation
+python run_all_experiments_efficientnet.py --epochs 25 --batch-size 32
+python run_all_experiments_swin.py --epochs 25 --batch-size 32
 ```
 
-### 3. Multi-seed Robustness Analysis (`run_robustness.py`)
+### 3. Multi-seed Robustness Analysis
 
 Runs the classification experiments using multiple random seeds to provide statistically significant results (mean ± std). Essential for reducing variance and proving robustness across models.
 
@@ -386,22 +397,23 @@ Runs the classification experiments using multiple random seeds to provide stati
 ```powershell
 # Run a 5-seed robustness test across all 4 conditions
 python run_robustness.py --seeds 5 --epochs 25
-
-# Quick test with 1 seed on baseline data
-python run_robustness.py --seeds 1 --conditions baseline --epochs 1
+python run_robustness_efficientnet.py --seeds 5 --epochs 25
+python run_robustness_swin.py --seeds 5 --epochs 25
 ```
-Results will save to `classification_results/robustness/robustness_summary.csv` for thesis tables.
+Results are saved to `classification_results/robustness/`, `classification_results_efficientnet/robustness/`, and `classification_results_swin/robustness/` containing `robustness_summary.csv` and JSON equivalents.
 
-### 4. Grad-CAM Visualization (`generate_gradcam.py`)
+### 4. Grad-CAM Visualization
 
-Produces Class Activation Maps (Grad-CAM) to see what image regions the ResNet-18 model is focusing on to classify KL0 vs KL2.
+Produces Class Activation Maps (Grad-CAM) to see what image regions the models are focusing on. Note that Swin-Tiny uses a custom reshaping hook to interpret the Transformer tokens spatially.
 
 #### Usage
 ```powershell
 # Generate comparison heatmaps for all 4 model conditions
 python generate_gradcam.py --all-conditions --num-samples 10
+python generate_gradcam_efficientnet.py --all-conditions --num-samples 10
+python generate_gradcam_swin.py --all-conditions --num-samples 10
 ```
-Heatmap overlays are saved in the `gradcam_results/` directory, showing predictions side-by-side with original and heatmap outputs.
+Heatmap overlays are saved in the `gradcam_results/`, `gradcam_results_efficientnet/`, and `gradcam_results_swin/` directories.
 
 ---
 
@@ -431,7 +443,7 @@ process_all.bat
 
 This will:
 1. Generate segmentation masks for all 6 folders
-2. Create blackout images (joint space blacked out)
+2. Create blackout images (joint region blacked out)
 3. Create left/right split versions
 
 **Output directories created:**
@@ -503,6 +515,29 @@ Knee_Segmentation/
 ├── predict_png.py                 # Legacy: Predict on full PNG X-rays
 ├── evaluate.py                    # Legacy: Model evaluation
 │
+├── prepare_classification_data.py # Script: Formatting images for PyTorch
+├── sort_lateral_medial.py         # Script: Sort split masks by anatomy
+├── classify_train.py              # Script: Train ResNet-18 model
+├── classify_train_efficientnet.py # Script: Train EfficientNet-B0 model
+├── classify_train_swin.py         # Script: Train Swin-Tiny model
+├── classify_evaluate.py           # Script: Evaluate ResNet-18 model
+├── classify_evaluate_efficientnet.py # Script: Evaluate EfficientNet-B0 model
+├── classify_evaluate_swin.py      # Script: Evaluate Swin-Tiny model
+├── run_all_experiments.py         # Script: ResNet-18 Classification Pipeline
+├── run_all_experiments_efficientnet.py # Script: EfficientNet-B0 Pipeline
+├── run_all_experiments_swin.py    # Script: Swin-Tiny Pipeline
+├── run_robustness.py              # Script: ResNet-18 Multi-seed stats
+├── run_robustness_efficientnet.py # Script: EfficientNet Multi-seed stats
+├── run_robustness_swin.py         # Script: Swin-Tiny Multi-seed stats
+├── generate_gradcam.py            # Script: ResNet-18 Grad-CAM Maps
+├── generate_gradcam_efficientnet.py # Script: EfficientNet Grad-CAM Maps
+├── generate_gradcam_swin.py       # Script: Swin-Tiny Grad-CAM Maps
+│
+├── check_image_type.py            # Utility: Check if image is pre-cropped
+├── knee_localizer.py              # Utility: Locate knee in full X-rays
+├── oa_vars.py                     # Utility: Process OA variables
+├── generate_portfolio_figure.py   # Utility: Portfolio visualizations
+│
 ├── README_UPDATED.md              # This comprehensive guide
 ├── USAGE_GUIDE.md                 # Detailed usage examples
 ├── RUNNING_INSTRUCTIONS.md        # Step-by-step guide
@@ -524,8 +559,12 @@ Knee_Segmentation/
 │
 ├── .venv_gpu/                     # GPU Virtual Environment (uv)
 ├── classification_datasets/       # Formatted datasets post-preparation
-├── classification_results/        # Trained models, logs, & robustness CSVs
-├── gradcam_results/               # Visual heatmaps & prediction overlays
+├── classification_results/        # ResNet-18 output directory
+├── classification_results_efficientnet/ # EfficientNet-B0 output directory
+├── classification_results_swin/   # Swin-Tiny output directory
+├── gradcam_results/               # ResNet-18 Visual heatmaps & overlays
+├── gradcam_results_efficientnet/  # EfficientNet-B0 heatmaps
+├── gradcam_results_swin/          # Swin-Tiny heatmaps
 ├── comparison_figures/            # 2x3 visualization grids
 │
 ├── results_test_0/                # Generated masks (Step 1)

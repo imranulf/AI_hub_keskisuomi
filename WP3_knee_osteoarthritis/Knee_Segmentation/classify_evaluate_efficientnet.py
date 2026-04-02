@@ -1,5 +1,7 @@
 """
-classify_evaluate.py — Evaluate a trained ResNet-18 classifier on any test set
+classify_evaluate_efficientnet.py — Evaluate a trained EfficientNet-B0 classifier on any test set
+
+Identical protocol to classify_evaluate.py (ResNet-18) but for EfficientNet-B0.
 
 Produces:
     - Accuracy, Precision, Recall, F1-score
@@ -8,12 +10,12 @@ Produces:
     - Confidence distribution analysis (for RQ3)
 
 Usage:
-    python classify_evaluate.py --model classification_results/baseline/best_model.pth \
-        --test-dir knee_osteoarthritis_dataset/test --name baseline_on_original
+    python classify_evaluate_efficientnet.py --model classification_results_efficientnet/baseline/best_model.pth \
+        --test-dir knee_osteoarthritis_dataset/test --name baseline_self
 
     # Cross-evaluation (RQ3): baseline model on ablated test set
-    python classify_evaluate.py --model classification_results/baseline/best_model.pth \
-        --test-dir blackout_dataset/test --name baseline_on_blackout
+    python classify_evaluate_efficientnet.py --model classification_results_efficientnet/baseline/best_model.pth \
+        --test-dir classification_datasets/blackout/test --name baseline_on_blackout
 """
 
 import argparse
@@ -47,11 +49,21 @@ class GrayscaleImageFolder(ImageFolder):
 
 
 def build_model(num_classes: int = 2) -> nn.Module:
-    """Build ResNet-18 with single-channel input (no pretrained — weights loaded separately)."""
-    model = models.resnet18(weights=None)
-    new_conv = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-    model.conv1 = new_conv
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    """Build EfficientNet-B0 with single-channel input (no pretrained — weights loaded separately)."""
+    model = models.efficientnet_b0(weights=None)
+    # Adapt first conv: 3-channel → 1-channel
+    original_conv = model.features[0][0]
+    new_conv = nn.Conv2d(
+        1, original_conv.out_channels,
+        kernel_size=original_conv.kernel_size,
+        stride=original_conv.stride,
+        padding=original_conv.padding,
+        bias=False,
+    )
+    model.features[0][0] = new_conv
+    # Replace classifier
+    in_features = model.classifier[1].in_features
+    model.classifier[1] = nn.Linear(in_features, num_classes)
     return model
 
 
@@ -183,7 +195,7 @@ def confidence_analysis(labels, preds, probs, class_names):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate classification model")
+    parser = argparse.ArgumentParser(description="Evaluate EfficientNet-B0 classification model")
     parser.add_argument("--model", type=str, required=True,
                         help="Path to best_model.pth checkpoint")
     parser.add_argument("--test-dir", type=str, required=True,
@@ -199,13 +211,14 @@ def main():
 
     device = torch.device(f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
+    print(f"Architecture: EfficientNet-B0")
 
     # Output directory
-    out_dir = Path("classification_results") / "evaluations"
+    out_dir = Path("classification_results_efficientnet") / "evaluations"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Load model
-    checkpoint = torch.load(args.model, map_location=device)
+    checkpoint = torch.load(args.model, map_location=device, weights_only=False)
     model = build_model(num_classes=2)
     model.load_state_dict(checkpoint["model_state_dict"])
     model = model.to(device)
@@ -230,7 +243,7 @@ def main():
 
     # Print results
     print(f"\n{'='*60}")
-    print(f"RESULTS: {args.name}")
+    print(f"RESULTS: {args.name} (EfficientNet-B0)")
     print(f"{'='*60}")
     print(f"Accuracy:        {metrics['accuracy']:.4f} ({metrics['correct']}/{metrics['total']})")
     print(f"Macro Precision: {metrics['macro_precision']:.4f}")
@@ -252,6 +265,7 @@ def main():
     # Save results
     result = {
         "name": args.name,
+        "architecture": "efficientnet_b0",
         "model_path": args.model,
         "test_dir": args.test_dir,
         "metrics": {k: v for k, v in metrics.items() if k != "confusion_matrix"},

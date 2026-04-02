@@ -1,28 +1,32 @@
 """
-run_robustness.py — Run classification experiments with multiple random seeds
-for statistical robustness analysis.
+run_robustness_efficientnet.py — Run EfficientNet-B0 classification experiments with multiple
+random seeds for statistical robustness analysis.
 
-Trains each condition N times with different seeds and reports mean ± std
-for accuracy, F1, and confidence. Addresses the single-run limitation
-identified in the experimental gaps.
+Identical protocol to run_robustness.py (ResNet-18) but using EfficientNet-B0.
+
+Trains each condition N times with different seeds and reports mean +/- std
+for accuracy, F1, and confidence.
 
 Usage:
     # Run 5 seeds for all conditions (full robustness test)
-    python run_robustness.py --seeds 5 --epochs 25
+    python run_robustness_efficientnet.py --seeds 5 --epochs 25
 
     # Run 3 seeds for baseline only (quick test)
-    python run_robustness.py --seeds 3 --epochs 25 --conditions baseline
+    python run_robustness_efficientnet.py --seeds 3 --epochs 25 --conditions baseline
 
     # Resume from a specific seed (if interrupted)
-    python run_robustness.py --seeds 5 --start-seed 3
+    python run_robustness_efficientnet.py --seeds 5 --start-seed 3
+
+    # Summary only (after training complete)
+    python run_robustness_efficientnet.py --summary-only
 
 Output:
-    classification_results/robustness/
+    classification_results_efficientnet/robustness/
         seed_{N}/{condition}/best_model.pth
         seed_{N}/evaluations/{condition}_self.json
         seed_{N}/evaluations/baseline_on_{condition}.json
-        robustness_summary.json        — mean ± std across seeds
-        robustness_summary.csv         — tabular format for thesis tables
+        robustness_summary.json
+        robustness_summary.csv
 """
 
 import argparse
@@ -42,6 +46,10 @@ CONDITIONS = {
     "medial_masked": "classification_datasets/medial_masked",
     "lateral_masked": "classification_datasets/lateral_masked",
 }
+
+RESULTS_BASE = Path("classification_results_efficientnet")
+TRAIN_SCRIPT = "classify_train_efficientnet.py"
+EVAL_SCRIPT = "classify_evaluate_efficientnet.py"
 
 
 def get_python():
@@ -73,12 +81,12 @@ def train_with_seed(condition: str, data_dir: str, seed: int,
     output_dir.mkdir(parents=True, exist_ok=True)
 
     python = get_python()
-    script = str(Path(__file__).parent / "classify_train.py")
+    script = str(Path(__file__).parent / TRAIN_SCRIPT)
 
     cmd = [
         python, script,
         "--data-dir", str(data_dir),
-        "--name", output_name,
+        "--name", f"robustness/seed_{seed}/{condition}",
         "--epochs", str(epochs),
         "--batch-size", str(batch_size),
         "--lr", "0.0001",
@@ -89,7 +97,7 @@ def train_with_seed(condition: str, data_dir: str, seed: int,
     # Set seed via PyTorch/NumPy in environment
     env = set_seed_env(seed)
 
-    # Also create a seed config file that classify_train.py can read
+    # Also create a seed config file
     seed_file = output_dir / "seed.txt"
     with open(seed_file, "w") as f:
         f.write(str(seed))
@@ -101,7 +109,7 @@ def evaluate_with_seed(model_path: str, test_dir: str, eval_name: str,
                         seed: int, output_base: Path):
     """Evaluate a model and save results."""
     python = get_python()
-    script = str(Path(__file__).parent / "classify_evaluate.py")
+    script = str(Path(__file__).parent / EVAL_SCRIPT)
 
     full_name = f"robustness/seed_{seed}/{eval_name}"
 
@@ -127,7 +135,7 @@ def load_eval_results(eval_path: Path) -> dict:
 
 def compute_robustness_stats(all_results: dict) -> dict:
     """
-    Compute mean ± std across seeds for each condition and metric.
+    Compute mean +/- std across seeds for each condition and metric.
 
     Args:
         all_results: {seed: {condition: {metric: value}}}
@@ -172,7 +180,7 @@ def compute_robustness_stats(all_results: dict) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run multi-seed robustness experiments"
+        description="Run multi-seed robustness experiments (EfficientNet-B0)"
     )
     parser.add_argument("--seeds", type=int, default=5,
                         help="Number of random seeds to run (default: 5)")
@@ -190,7 +198,7 @@ def main():
                         help="Skip training/eval, only compute summary stats")
     args = parser.parse_args()
 
-    output_base = Path("classification_results/robustness")
+    output_base = RESULTS_BASE / "robustness"
     output_base.mkdir(parents=True, exist_ok=True)
 
     conditions = args.conditions or list(CONDITIONS.keys())
@@ -199,7 +207,7 @@ def main():
     actual_seeds = [42 + i * 137 for i in seed_list]
 
     print("=" * 70)
-    print(f"  ROBUSTNESS EXPERIMENT")
+    print(f"  ROBUSTNESS EXPERIMENT (EfficientNet-B0)")
     print(f"  Seeds: {len(actual_seeds)} ({actual_seeds})")
     print(f"  Conditions: {conditions}")
     print(f"  Epochs: {args.epochs}")
@@ -208,7 +216,7 @@ def main():
     # ---- Phase 1: Training ----
     if not args.eval_only and not args.summary_only:
         print(f"\n{'#'*70}")
-        print(f"  PHASE 1: TRAINING ({len(actual_seeds)} seeds × {len(conditions)} conditions)")
+        print(f"  PHASE 1: TRAINING ({len(actual_seeds)} seeds x {len(conditions)} conditions)")
         print(f"{'#'*70}")
 
         for seed_idx, seed in enumerate(actual_seeds):
@@ -233,7 +241,7 @@ def main():
     # ---- Phase 2: Evaluation ----
     if not args.summary_only:
         print(f"\n{'#'*70}")
-        print(f"  PHASE 2: EVALUATION")
+        print(f"  PHASE 2: EVALUATION (EfficientNet-B0)")
         print(f"{'#'*70}")
 
         for seed in actual_seeds:
@@ -246,7 +254,7 @@ def main():
                 test_dir = Path(CONDITIONS[condition]) / "test"
                 if test_dir.exists():
                     eval_name = f"{condition}_self"
-                    eval_path = Path("classification_results") / "evaluations" / "robustness" / f"seed_{seed}" / f"{eval_name}.json"
+                    eval_path = RESULTS_BASE / "evaluations" / "robustness" / f"seed_{seed}" / f"{eval_name}.json"
                     if not eval_path.exists():
                         print(f"\n  Evaluating: {condition} seed {seed} (self)")
                         evaluate_with_seed(str(model_path), str(test_dir),
@@ -258,15 +266,15 @@ def main():
                         cross_test = Path(CONDITIONS[cross_cond]) / "test"
                         if cross_test.exists():
                             cross_name = f"baseline_on_{cross_cond}"
-                            cross_path = Path("classification_results") / "evaluations" / "robustness" / f"seed_{seed}" / f"{cross_name}.json"
+                            cross_path = RESULTS_BASE / "evaluations" / "robustness" / f"seed_{seed}" / f"{cross_name}.json"
                             if not cross_path.exists():
-                                print(f"\n  Cross-eval: baseline seed {seed} → {cross_cond}")
+                                print(f"\n  Cross-eval: baseline seed {seed} -> {cross_cond}")
                                 evaluate_with_seed(str(model_path), str(cross_test),
                                                    cross_name, seed, output_base)
 
     # ---- Phase 3: Summary ----
     print(f"\n{'#'*70}")
-    print(f"  PHASE 3: ROBUSTNESS SUMMARY")
+    print(f"  PHASE 3: ROBUSTNESS SUMMARY (EfficientNet-B0)")
     print(f"{'#'*70}")
 
     # Collect all self-evaluation results
@@ -279,25 +287,27 @@ def main():
 
         for condition in conditions:
             # Self-eval
-            eval_path = Path("classification_results") / "evaluations" / "robustness" / f"seed_{seed}" / f"{condition}_self.json"
+            eval_path = RESULTS_BASE / "evaluations" / "robustness" / f"seed_{seed}" / f"{condition}_self.json"
             data = load_eval_results(eval_path)
             if data:
+                conf_data = data.get("confidence", {})
                 self_eval_results[seed][condition] = {
                     "accuracy": data.get("metrics", {}).get("accuracy", 0),
                     "macro_f1": data.get("metrics", {}).get("macro_f1", 0),
-                    "mean_confidence": data.get("confidence", {}).get("mean_confidence_all", 0),
-                    "uncertain_correct_pct": data.get("confidence", {}).get("uncertain_correct_pct", 0),
+                    "mean_confidence": conf_data.get("mean_confidence_all", 0),
+                    "uncertain_correct_pct": conf_data.get("uncertain_correct_pct", 0),
                 }
 
             # Cross-eval (baseline on each condition)
-            cross_path = Path("classification_results") / "evaluations" / "robustness" / f"seed_{seed}" / f"baseline_on_{condition}.json"
+            cross_path = RESULTS_BASE / "evaluations" / "robustness" / f"seed_{seed}" / f"baseline_on_{condition}.json"
             data = load_eval_results(cross_path)
             if data:
+                conf_data = data.get("confidence", {})
                 cross_eval_results[seed][f"baseline_on_{condition}"] = {
                     "accuracy": data.get("metrics", {}).get("accuracy", 0),
                     "macro_f1": data.get("metrics", {}).get("macro_f1", 0),
-                    "mean_confidence": data.get("confidence", {}).get("mean_confidence_all", 0),
-                    "uncertain_correct_pct": data.get("confidence", {}).get("uncertain_correct_pct", 0),
+                    "mean_confidence": conf_data.get("mean_confidence_all", 0),
+                    "uncertain_correct_pct": conf_data.get("uncertain_correct_pct", 0),
                 }
 
     # Compute statistics
@@ -306,7 +316,7 @@ def main():
 
     # Print summary
     print(f"\n{'='*70}")
-    print(f"  SELF-EVALUATION (mean ± std across {len(actual_seeds)} seeds)")
+    print(f"  SELF-EVALUATION (mean +/- std across {len(actual_seeds)} seeds)")
     print(f"{'='*70}")
     print(f"{'Condition':<20} {'Accuracy':<20} {'Macro F1':<20} {'Confidence':<20}")
     print("-" * 80)
@@ -317,12 +327,12 @@ def main():
             f1 = s.get("macro_f1", {})
             conf = s.get("mean_confidence", {})
             print(f"{condition:<20} "
-                  f"{acc.get('mean', 0):.4f}±{acc.get('std', 0):.4f}  "
-                  f"{f1.get('mean', 0):.4f}±{f1.get('std', 0):.4f}  "
-                  f"{conf.get('mean', 0):.4f}±{conf.get('std', 0):.4f}")
+                  f"{acc.get('mean', 0):.4f}+/-{acc.get('std', 0):.4f}  "
+                  f"{f1.get('mean', 0):.4f}+/-{f1.get('std', 0):.4f}  "
+                  f"{conf.get('mean', 0):.4f}+/-{conf.get('std', 0):.4f}")
 
     print(f"\n{'='*70}")
-    print(f"  CROSS-EVALUATION (baseline model, mean ± std)")
+    print(f"  CROSS-EVALUATION (baseline model, mean +/- std)")
     print(f"{'='*70}")
     print(f"{'Test Condition':<25} {'Accuracy':<20} {'Macro F1':<20} {'Confidence':<20}")
     print("-" * 85)
@@ -334,12 +344,13 @@ def main():
             f1 = s.get("macro_f1", {})
             conf = s.get("mean_confidence", {})
             print(f"{key:<25} "
-                  f"{acc.get('mean', 0):.4f}±{acc.get('std', 0):.4f}  "
-                  f"{f1.get('mean', 0):.4f}±{f1.get('std', 0):.4f}  "
-                  f"{conf.get('mean', 0):.4f}±{conf.get('std', 0):.4f}")
+                  f"{acc.get('mean', 0):.4f}+/-{acc.get('std', 0):.4f}  "
+                  f"{f1.get('mean', 0):.4f}+/-{f1.get('std', 0):.4f}  "
+                  f"{conf.get('mean', 0):.4f}+/-{conf.get('std', 0):.4f}")
 
     # Save summary
     summary = {
+        "architecture": "efficientnet_b0",
         "seeds": actual_seeds,
         "n_seeds": len(actual_seeds),
         "conditions": conditions,
@@ -371,7 +382,7 @@ def main():
     print(f"CSV saved to: {csv_path}")
 
     print(f"\n{'#'*70}")
-    print(f"  ROBUSTNESS ANALYSIS COMPLETE")
+    print(f"  ROBUSTNESS ANALYSIS COMPLETE (EfficientNet-B0)")
     print(f"{'#'*70}")
 
 
