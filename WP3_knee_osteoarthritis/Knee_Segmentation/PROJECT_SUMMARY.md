@@ -2,7 +2,7 @@
 
 **Last Updated:** October 23, 2025  
 **Project:** AI Hub Keski-Suomi - WP3 Knee Osteoarthritis  
-**Location:** `C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation`
+**Location:** `.\Knee_Segmentation`
 
 ---
 
@@ -91,7 +91,7 @@ process_single_folder.bat "path\to\images" "output_name"
 **Option 2: Run individual commands**
 ```batch
 REM Navigate to project directory
-cd C:\Users\imran\Knee_Segmentation
+cd /path/to/
 
 REM 1. Generate masks
 python segment_simple.py -m MODEL_unet.pth -i "path\to\images" -o results

@@ -7,7 +7,7 @@ REM ============================================================================
 setlocal enabledelayedexpansion
 
 REM Configuration
-set "BASE_DATA=C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data"
+set "BASE_DATA=./data"
 set "MODEL=MODEL_unet.pth"
 
 REM Check if model exists

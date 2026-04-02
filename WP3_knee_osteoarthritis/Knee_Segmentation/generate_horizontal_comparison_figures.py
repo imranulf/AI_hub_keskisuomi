@@ -26,7 +26,7 @@ def generate_horizontal_comparison_figure(image_id, dataset, grade, output_name=
     print(f"Generating horizontal figure for {image_id} ({dataset}/{grade})...")
 
     # Define paths based on dataset and grade
-    base_data = f"C:/Users/imran/AI_hub_keskisuomi/WP3_knee_osteoarthritis/data/{dataset}/data/{grade}"
+    base_data = f"./data/{dataset}/data/{grade}"
 
     paths = {
         "Original": f"{base_data}/{image_id}.png",

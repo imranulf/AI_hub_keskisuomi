@@ -6,7 +6,7 @@ Knee joint space segmentation pipeline for Osteoarthritis (OA) research. Uses U-
 
 ```bash
 # Python environment
-C:\Users\imran\miniconda3\envs\knee-segmentation\python.exe
+/path/to/-segmentation\python.exe
 
 # Activate environment
 conda activate knee-segmentation
@@ -16,7 +16,7 @@ conda activate knee-segmentation
 
 ### Source Data Location
 ```
-C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\
+./data\
 ├── train\data\
 │   ├── 0\    # Healthy (grade 0) - 2,286 images
 │   └── 2\    # OA (grade 2) - 1,516 images
@@ -364,7 +364,7 @@ gradcam_results/
 ```bash
 # For all 6 dataset folders
 python segment_simple.py -a unet -m MODEL.pth \
-    -i "C:/Users/imran/AI_hub_keskisuomi/WP3_knee_osteoarthritis/data/train/data/0" \
+    -i "./data/train/data/0" \
     -o results_train_0
 ```
 
@@ -378,7 +378,7 @@ python expand_masks.py -i results_train_0 -o results_train_0_extralarge -k 9 -n 
 #### Full Blackout
 ```bash
 python apply_mask_blackout.py \
-    -i "C:/Users/imran/AI_hub_keskisuomi/WP3_knee_osteoarthritis/data/train/data/0" \
+    -i "./data/train/data/0" \
     -m results_train_0_extralarge \
     -o blackout_train_0_extralarge
 ```
@@ -386,7 +386,7 @@ python apply_mask_blackout.py \
 #### Left/Right Split
 ```bash
 python apply_mask_split.py \
-    -i "C:/Users/imran/AI_hub_keskisuomi/WP3_knee_osteoarthritis/data/train/data/0" \
+    -i "./data/train/data/0" \
     -m results_train_0_extralarge \
     -l left_masked_train_0_extralarge \
     -r right_masked_train_0_extralarge

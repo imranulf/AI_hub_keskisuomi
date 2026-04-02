@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # Load and display image info
-img = cv2.imread(r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0\9003175L.png", cv2.IMREAD_GRAYSCALE)
+img = cv2.imread(r"./data\test\data\0\9003175L.png", cv2.IMREAD_GRAYSCALE)
 
 print(f"Image shape: {img.shape}")
 print(f"Image dtype: {img.dtype}")

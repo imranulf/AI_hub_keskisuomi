@@ -12,7 +12,7 @@ echo ===========================================================================
 echo.
 
 REM Configuration
-set "BASE_DATA=C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data"
+set "BASE_DATA=./data"
 
 REM Define folders and their input paths
 set "FOLDERS=test_0 test_2 train_0 train_2 val_0 val_2"

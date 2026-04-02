@@ -214,7 +214,7 @@ def get_args():
     )
     parser.add_argument(
         "--model", "-m",
-        default=r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation\MODEL_unet.pth",
+        default=r".\Knee_Segmentation\MODEL_unet.pth",
         help="Path to model weights (.pth)"
     )
     parser.add_argument("--n-classes", "-nc", type=int, default=1, help="Number of classes in the model")
@@ -225,12 +225,12 @@ def get_args():
     # IO
     parser.add_argument(
         "--input-dirs", "-i", nargs="+", type=str, default=[
-            r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0",
-            r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\2",
-            r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\0",
-            r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\2",
-            r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\0",
-            r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\2",
+            r"./data\test\data\0",
+            r"./data\test\data\2",
+            r"./data\train\data\0",
+            r"./data\train\data\2",
+            r"./data\val\data\0",
+            r"./data\val\data\2",
         ],
         help="One or more input directories (DICOM or images)"
     )

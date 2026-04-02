@@ -15,7 +15,7 @@ model.to(device=device)
 model.load_state_dict(torch.load('MODEL_unet.pth', map_location=device))
 print("Model loaded successfully")
 
-test_image = r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0\9003175L.png"
+test_image = r"./data\test\data\0\9003175L.png"
 print(f"\nTesting with: {test_image}")
 
 try:

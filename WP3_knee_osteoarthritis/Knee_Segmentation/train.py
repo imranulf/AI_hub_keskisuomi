@@ -114,7 +114,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
     parser.add_argument('--architecture','-a', choices=['unet', 'drn'],default='unet',help='Architecture to train, possible choices: unet, drn')
     parser.add_argument('--epochs', '-e', metavar='E', type=int, default=5, help='Number of epochs')
-    parser.add_argument('--input-dir', '-i', metavar='I',dest='input_dir', type=str, default=r'C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train', help='Directory with training data divided into folders named data and target')
+    parser.add_argument('--input-dir', '-i', metavar='I',dest='input_dir', type=str, default=r'./data\train', help='Directory with training data divided into folders named data and target')
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=1, help='Batch size')
     parser.add_argument('--n-classes', '-nc', dest='n_classes', metavar='NC', type=int, default=1, help='Number of classes')
     parser.add_argument('--n-channels', '-nch', dest='n_channels', metavar='NCH', type=int, default=1, help='Number of channels in input images')

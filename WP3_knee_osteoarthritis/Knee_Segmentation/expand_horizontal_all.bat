@@ -7,7 +7,7 @@ REM ============================================================================
 setlocal enabledelayedexpansion
 
 REM Activate conda environment
-call C:\Users\imran\miniconda3\Scripts\activate.bat torch_env
+call /path/to/.bat torch_env
 
 echo ============================================================================
 echo             HORIZONTAL MASK EXPANSION - ALL DIRECTORIES

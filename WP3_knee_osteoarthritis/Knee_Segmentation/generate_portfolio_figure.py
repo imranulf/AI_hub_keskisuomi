@@ -5,7 +5,7 @@ def generate_figure(image_id="9003175L"):
     print(f"Starting figure generation for {image_id} using PIL...")
     # Define paths
     paths = {
-        "Original": f"C:/Users/imran/AI_hub_keskisuomi/WP3_knee_osteoarthritis/data/test/data/0/{image_id}.png",
+        "Original": f"./data/test/data/0/{image_id}.png",
         "Segmentation Mask": f"results_test_0/{image_id}_mask.png",
         "Expanded Mask": f"out_test_expanded/{image_id}_mask.png",
         "Full Blackout": f"blackedout_test_0/{image_id}.png",

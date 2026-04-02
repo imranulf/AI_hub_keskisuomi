@@ -6,7 +6,7 @@ from skimage.feature import canny
 from skimage.filters import sobel_v, sobel_h
 
 # Load test image
-test_image = r"C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0\9003175L.png"
+test_image = r"./data\test\data\0\9003175L.png"
 img_orig = cv.imread(test_image, cv.IMREAD_GRAYSCALE)
 
 print(f"Original image shape: {img_orig.shape}")

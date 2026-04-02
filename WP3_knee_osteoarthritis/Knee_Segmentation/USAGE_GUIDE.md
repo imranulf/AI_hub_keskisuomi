@@ -22,7 +22,7 @@ Your images are **224×224 pre-cropped knee regions**, not full X-rays. This pro
 After running segmentation and processing, your files are organized as:
 
 ```
-C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation\
+.\Knee_Segmentation\
 │
 ├── results_test_0/              ← Segmentation masks (Step 1)
 │   ├── 9003175L_mask.png        ← Binary masks (white = joint space)
@@ -51,7 +51,7 @@ C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation\
 ### 1. Basic Segmentation
 
 ```powershell
-cd C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation
+cd .\Knee_Segmentation
 
 # Process a directory of images
 python segment_simple.py -m MODEL_unet.pth -i "C:\path\to\images" -o output_folder
@@ -126,24 +126,24 @@ python apply_mask_split.py -i "C:\path\to\images" -m "results_test_0_expanded" -
 
 ```powershell
 # Test data folder 0 - Complete pipeline
-python segment_simple.py -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -o results_test_0
-python apply_mask_blackout.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -m results_test_0 -o blackedout_test_0
-python apply_mask_split.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -m results_test_0 -l left_masked_test_0 -r right_masked_test_0
+python segment_simple.py -m MODEL_unet.pth -i "./data\test\data\0" -o results_test_0
+python apply_mask_blackout.py -i "./data\test\data\0" -m results_test_0 -o blackedout_test_0
+python apply_mask_split.py -i "./data\test\data\0" -m results_test_0 -l left_masked_test_0 -r right_masked_test_0
 
 # Test data folder 2 - Complete pipeline
-python segment_simple.py -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\2" -o results_test_2
-python apply_mask_blackout.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\2" -m results_test_2 -o blackedout_test_2
-python apply_mask_split.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\2" -m results_test_2 -l left_masked_test_2 -r right_masked_test_2
+python segment_simple.py -m MODEL_unet.pth -i "./data\test\data\2" -o results_test_2
+python apply_mask_blackout.py -i "./data\test\data\2" -m results_test_2 -o blackedout_test_2
+python apply_mask_split.py -i "./data\test\data\2" -m results_test_2 -l left_masked_test_2 -r right_masked_test_2
 
 # Train data folder 0 - Complete pipeline
-python segment_simple.py -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\0" -o results_train_0
-python apply_mask_blackout.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\0" -m results_train_0 -o blackedout_train_0
-python apply_mask_split.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\train\data\0" -m results_train_0 -l left_masked_train_0 -r right_masked_train_0
+python segment_simple.py -m MODEL_unet.pth -i "./data\train\data\0" -o results_train_0
+python apply_mask_blackout.py -i "./data\train\data\0" -m results_train_0 -o blackedout_train_0
+python apply_mask_split.py -i "./data\train\data\0" -m results_train_0 -l left_masked_train_0 -r right_masked_train_0
 
 # Validation data folder 0 - Complete pipeline
-python segment_simple.py -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\0" -o results_val_0
-python apply_mask_blackout.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\0" -m results_val_0 -o blackedout_val_0
-python apply_mask_split.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\val\data\0" -m results_val_0 -l left_masked_val_0 -r right_masked_val_0
+python segment_simple.py -m MODEL_unet.pth -i "./data\val\data\0" -o results_val_0
+python apply_mask_blackout.py -i "./data\val\data\0" -m results_val_0 -o blackedout_val_0
+python apply_mask_split.py -i "./data\val\data\0" -m results_val_0 -l left_masked_val_0 -r right_masked_val_0
 ```
 
 ## 📊 Understanding the Output
@@ -189,7 +189,7 @@ The script prints the percentage of image segmented for each file, e.g.:
 ### "ModuleNotFoundError"
 Make sure you're using the correct environment:
 ```powershell
-& C:\Users\imran\miniconda3\envs\knee-segmentation\python.exe segment_simple.py ...
+& /path/to/-segmentation\python.exe segment_simple.py ...
 ```
 
 ### Empty/Poor Segmentation

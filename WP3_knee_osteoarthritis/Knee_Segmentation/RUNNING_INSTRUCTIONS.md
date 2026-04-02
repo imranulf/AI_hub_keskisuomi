@@ -8,7 +8,7 @@
 3. Use `apply_mask_blackout.py` for full blackout
 4. Use `apply_mask_split.py` for left/right versions
 
-**Current workspace:** `C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation`
+**Current workspace:** `.\Knee_Segmentation`
 
 ## Environment Setup
 
@@ -27,7 +27,7 @@ conda activate knee-segmentation
 
 **Option C: Run directly with full Python path (no activation needed)**
 ```powershell
-& C:\Users\imran\miniconda3\envs\knee-segmentation\python.exe <script.py>
+& /path/to/-segmentation\python.exe <script.py>
 ```
 
 ### 2. Environment Contents
@@ -46,7 +46,7 @@ conda activate knee-segmentation
 Use `segment_simple.py` for PNG or JPG pre-cropped knee images:
 
 ```powershell
-cd C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\Knee_Segmentation
+cd .\Knee_Segmentation
 
 python segment_simple.py -m MODEL_unet.pth -i "C:\path\to\images" -o output_folder
 ```
@@ -63,7 +63,7 @@ python segment_simple.py -m MODEL_unet.pth -i "C:\path\to\images" -o output_fold
 
 #### Example for Your Test Data:
 ```powershell
-python segment_simple.py -m MODEL_unet.pth -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -o results_test_0
+python segment_simple.py -m MODEL_unet.pth -i "./data\test\data\0" -o results_test_0
 ```
 
 ### For Mask Expansion (Optional)
@@ -80,10 +80,10 @@ python expand_masks.py -i results_test_0 -o results_test_0_expanded_L -k 7 -n 3
 
 ```powershell
 # Full blackout
-python apply_mask_blackout.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -m results_test_0 -o blackedout_test_0
+python apply_mask_blackout.py -i "./data\test\data\0" -m results_test_0 -o blackedout_test_0
 
 # Left/right split
-python apply_mask_split.py -i "C:\Users\imran\AI_hub_keskisuomi\WP3_knee_osteoarthritis\data\test\data\0" -m results_test_0 -l left_masked_test_0 -r right_masked_test_0
+python apply_mask_split.py -i "./data\test\data\0" -m results_test_0 -l left_masked_test_0 -r right_masked_test_0
 ```
 
 ### For DICOM Files (Original Setup)
