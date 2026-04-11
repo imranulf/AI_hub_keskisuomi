@@ -33,6 +33,7 @@ import subprocess
 import sys
 from pathlib import Path
 from statistics import mean, stdev
+from scipy.stats import wilcoxon
 
 
 # Conditions and their data directories
@@ -338,6 +339,41 @@ def main():
                   f"{f1.get('mean', 0):.4f}±{f1.get('std', 0):.4f}  "
                   f"{conf.get('mean', 0):.4f}±{conf.get('std', 0):.4f}")
 
+    # Calculate Statistical Significance (Wilcoxon signed-rank tests)
+    significance_tests = {}
+    try:
+        def safe_wilcoxon(x, y):
+            if len(x) == len(y) and len(x) >= 3 and x != y:
+                try:
+                    stat, p = wilcoxon(x, y)
+                    return {"p_value": p, "statistic": stat}
+                except Exception:
+                    pass
+            return {"p_value": None, "statistic": None}
+            
+        significance_tests["baseline_vs_blackout_self_accuracy"] = safe_wilcoxon(
+            self_stats.get('baseline', {}).get('accuracy', {}).get('values', []),
+            self_stats.get('blackout', {}).get('accuracy', {}).get('values', [])
+        )
+        significance_tests["baseline_vs_blackout_cross_accuracy"] = safe_wilcoxon(
+            cross_stats.get('baseline_on_baseline', {}).get('accuracy', {}).get('values', []),
+            cross_stats.get('baseline_on_blackout', {}).get('accuracy', {}).get('values', [])
+        )
+        significance_tests["medial_vs_lateral_self_accuracy"] = safe_wilcoxon(
+            self_stats.get('medial_masked', {}).get('accuracy', {}).get('values', []),
+            self_stats.get('lateral_masked', {}).get('accuracy', {}).get('values', [])
+        )
+        significance_tests["medial_vs_lateral_cross_accuracy"] = safe_wilcoxon(
+            cross_stats.get('baseline_on_medial_masked', {}).get('accuracy', {}).get('values', []),
+            cross_stats.get('baseline_on_lateral_masked', {}).get('accuracy', {}).get('values', [])
+        )
+        significance_tests["baseline_vs_blackout_cross_confidence"] = safe_wilcoxon(
+            cross_stats.get('baseline_on_baseline', {}).get('mean_confidence', {}).get('values', []),
+            cross_stats.get('baseline_on_blackout', {}).get('mean_confidence', {}).get('values', [])
+        )
+    except Exception as e:
+        print(f"Warning: Could not calculate statistical significance. {str(e)}")
+
     # Save summary
     summary = {
         "seeds": actual_seeds,
@@ -346,6 +382,7 @@ def main():
         "epochs": args.epochs,
         "self_evaluation": self_stats,
         "cross_evaluation": cross_stats,
+        "significance_tests": significance_tests,
     }
 
     summary_path = output_base / "robustness_summary.json"

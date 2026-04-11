@@ -270,6 +270,7 @@ def phase4_summary():
                 "macro_f1": results[key]["metrics"]["macro_f1"],
                 "mean_confidence": results[key]["confidence"]["mean_confidence_all"],
                 "uncertain_correct_pct": results[key]["confidence"]["uncertain_correct_pct"],
+                "confusion_matrix": results[key].get("confusion_matrix", [])
             }
         key = f"baseline_on_{name}"
         if key in results:
@@ -278,6 +279,7 @@ def phase4_summary():
                 "macro_f1": results[key]["metrics"]["macro_f1"],
                 "mean_confidence": results[key]["confidence"]["mean_confidence_all"],
                 "uncertain_correct_pct": results[key]["confidence"]["uncertain_correct_pct"],
+                "confusion_matrix": results[key].get("confusion_matrix", [])
             }
 
     summary_path = RESULTS_DIR / "experiment_summary.json"
