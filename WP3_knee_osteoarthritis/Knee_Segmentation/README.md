@@ -42,6 +42,7 @@ This project provides a complete pipeline for knee X-ray image segmentation and 
   - [2. Classification Training & Evaluation](#2-classification-training--evaluation-run_all_experimentspy)
   - [3. Multi-seed Robustness Analysis](#3-multi-seed-robustness-analysis-run_robustnesspy)
   - [4. Grad-CAM Visualization & Quantitative Analysis](#4-grad-cam-visualization--quantitative-analysis)
+  - [5. Threshold-Independent Metrics (ROC AUC & PR AUC)](#5-threshold-independent-metrics-roc-auc--pr-auc)
 - [Batch Processing](#batch-processing)
 - [Directory Structure](#directory-structure)
 - [Legacy Scripts](#legacy-scripts)
@@ -361,6 +362,12 @@ python generate_pipeline_diagram.py
 
 # Generate model architecture overviews for ResNet, EfficientNet, and Swin
 python generate_architecture_diagrams.py
+
+# Generate high-level classification workflow diagram
+python generate_classification_workflow.py
+
+# Generate Nykanen-to-thesis extension diagram
+python generate_nykanen_figure.py
 ```
 *Outputs are saved to the `drafts/` and `architecture_diagrams/` directories.*
 
@@ -437,6 +444,36 @@ python generate_gradcam_comparisons.py
 python evaluate_gradcam_quantitatively.py
 ```
 Heatmap overlays are saved in the `gradcam_results/`, `gradcam_results_efficientnet/`, and `gradcam_results_swin/` directories. Quantitative JSON metrics and aggregate images output to the root and respective subdirectories.
+
+### 5. Threshold-Independent Metrics (ROC AUC & PR AUC)
+
+As of 2026-04-23, threshold-independent evaluation is completed across all three architectures with full robustness coverage.
+
+- **Robustness coverage**: 5 seeds x 8 evaluations per seed x 3 architectures = **120 GPU inference runs**
+- **Seed set**: 42, 179, 316, 453, 590
+- **Per-run test size**: 1,086 images (639 KL0, 447 KL2)
+- **Positive prevalence baseline for PR AUC**: 447 / 1086 = **0.4116**
+
+#### Run AUC Aggregation
+
+```powershell
+python compute_auc_metrics.py --results-root . --out-dir drafts
+```
+
+#### Generated Outputs
+
+- `drafts/per_run_auc.csv` (long format, per evaluation run)
+- `drafts/auc_summary_mean_std.csv` (mean +- std across seeds)
+
+#### Key Cross-Evaluation Blackout Findings (mean +- std, n=5)
+
+| Architecture | ROC AUC | PR AUC |
+|--------------|---------|--------|
+| ResNet-18 | 0.6057 +- 0.0282 | 0.5181 +- 0.0315 |
+| EfficientNet-B0 | 0.6839 +- 0.0138 | 0.5787 +- 0.0241 |
+| Swin-Tiny | 0.5842 +- 0.0257 | 0.4795 +- 0.0225 |
+
+These values quantify threshold-independent degradation when the central joint region is removed.
 
 ---
 
@@ -558,6 +595,7 @@ Knee_Segmentation/
 ├── run_robustness_efficientnet.py # Script: EfficientNet Multi-seed stats
 ├── run_robustness_swin.py         # Script: Swin-Tiny Multi-seed stats
 ├── perform_wilcoxon_tests.py      # Script: Paired Wilcoxon Signed-Rank tests
+├── compute_auc_metrics.py          # Script: ROC AUC / PR AUC aggregation
 ├── generate_gradcam.py            # Script: ResNet-18 Grad-CAM Maps
 ├── generate_gradcam_efficientnet.py # Script: EfficientNet Grad-CAM Maps
 ├── generate_gradcam_swin.py       # Script: Swin-Tiny Grad-CAM Maps
@@ -565,6 +603,8 @@ Knee_Segmentation/
 ├── generate_gradcam_comparisons.py# Script: Grid layout for Spatial Attention
 ├── generate_pipeline_diagram.py   # Script: IEEE Phase Architecture Diagram
 ├── generate_architecture_diagrams.py # Script: Plot Network Architectures
+├── generate_classification_workflow.py # Script: Classification workflow diagram
+├── generate_nykanen_figure.py     # Script: Nykanen-thesis extension figure
 ├── generate_all_thesis_charts.py  # Script: Global evaluation charts (Acc, Uncertainty)
 ├── generate_comparison_figures.py # Script: Generate 2x3 visualization grids
 ├── generate_comparison_figures_horizontal.py # Script: Generate horizontal grids
@@ -846,6 +886,7 @@ For questions or issues:
 
 ## Version History
 
+- **v3.4** (2026-04-23) - Added threshold-independent thesis metrics workflow end-to-end. Completed GPU inference-only robustness re-evaluation for all architectures (120 runs total; 5 seeds x 8 eval conditions x 3 architectures) with per-image softmax exports. Added `compute_auc_metrics.py` and generated `drafts/per_run_auc.csv` and `drafts/auc_summary_mean_std.csv`. Added publication-ready diagram support scripts (`generate_classification_workflow.py`, `generate_nykanen_figure.py`) and aligned thesis figure styling updates.
 - **v3.3** (2026-04-11) - Added IEEE academic publication-ready diagram generation (`generate_pipeline_diagram.py`, `generate_architecture_diagrams.py`) implementing precise arrow path routing and uniform layout grids. Created quantitative Grad-CAM analysis tooling (`evaluate_gradcam_quantitatively.py`, `generate_gradcam_comparisons.py`) to systematically track spatial attention and activation density distributions.
 - **v3.2** (2026-04-06) - Integrated paired Wilcoxon signed-rank tests statically into the robustness pipelines across ResNet, EfficientNet, and Swin architectures for empirical `p-value` substantiation of thesis hypotheses.
 - **v3.1** (2026-04-03) - Finalized presentation-ready plotting capabilities. Consolidated all visualization scripts into `generate_all_thesis_charts.py` to auto-generate anti-collision labeled confusion matrices, medical sensitivity triads, confidence degradation maps, and ablation accuracy drops. Auto-integrates straight into `Comprehensive_Thesis_Report.docx`.
